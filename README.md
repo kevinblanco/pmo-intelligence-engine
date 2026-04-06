@@ -229,8 +229,7 @@ pmo-intelligence-engine/
 │   ├── resource_advisor/   # ADK + BigQuery MCP (capacity + OKR alignment)
 │   └── asana_context/  # ADK + Asana MCP (live Work Graph)
 ├── webhook_receiver/   # FastAPI: handshake + HMAC + heartbeat + dispatch
-├── deploy.sh           # Cloud Run deployment (all 5 services, ordered)
-└── demo/               # 10-minute recording studio script
+└── deploy.sh           # Cloud Run deployment (all 5 services, ordered)
 ```
 
 ---
