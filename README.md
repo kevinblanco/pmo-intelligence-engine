@@ -51,7 +51,7 @@ The PMO reviewer opens the task and has everything they need to make a data-driv
 - Python 3.12+
 - Asana account with admin access to a workspace
 
-**Desired, but not needed"**
+**Optional:**
 - Docker (for local builds)
 - `brew install graphviz` (macOS) — for diagram generation
 
@@ -59,16 +59,57 @@ The PMO reviewer opens the task and has everything they need to make a data-driv
 
 ## Setup
 
-### 1. Clone and configure
+### 1. Clone the repo
 
 ```bash
 git clone https://github.com/kevinblanco/pmo-intelligence-engine
 cd pmo-intelligence-engine
 cp .env.example .env
-# Fill in GCP_PROJECT_ID, ASANA_PAT, ASANA_PROJECT_GID, ASANA_MCP_CLIENT_ID/SECRET
 ```
 
-### 2. Provision GCP infrastructure
+Leave `.env` open — you'll fill in values as you collect them in the steps below.
+
+---
+
+### 2. Collect your Asana credentials
+
+You need three things from Asana before provisioning any GCP infrastructure.
+
+#### 2a. Personal Access Token (PAT)
+
+1. Go to [app.asana.com](https://app.asana.com) → click your profile photo → **My Settings**
+2. Open the **Apps** tab → **View Developer Console**
+3. Click **+ Create New Token** in the Personal Access Tokens section, give it a name, copy the token
+4. Add to `.env`:
+   ```
+   ASANA_PAT=your-token-here
+   ```
+
+#### 2b. Project GID
+
+1. Open your **New Project Requests** project in Asana (create it first if it doesn't exist — see [`asana/setup_guide.md`](asana/setup_guide.md) for steps on how to configure your project for best results)
+2. Look at the URL: `https://app.asana.com/0/<PROJECT_GID>/...`
+3. Copy the numeric ID and add to `.env`:
+   ```
+   ASANA_PROJECT_GID=1234567890123456
+   ```
+
+#### 2c. MCP OAuth App credentials
+
+The Asana Context agent connects to the live Asana Work Graph via MCP. This requires a separate OAuth app — it is **not** the same as your PAT.
+
+1. Go to [app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) → **+ Create new app** and select **MCP App** as the App type
+2. Under **OAuth**, add `http://localhost:8888/callback` to the redirect URL allowlist
+3. Under **Manage Distribution**, add your workspace (or set to **Any workspace**) — without this the token exchange fails with *"This app is not available to your Asana workspace or organization"*
+4. Copy the **Client ID** and **Client Secret**, then add to `.env` (we will securely store these in GCP's Secret Manager in the next step):
+   ```
+   ASANA_MCP_CLIENT_ID=your-client-id
+   ASANA_MCP_CLIENT_SECRET=your-client-secret
+   ```
+
+---
+
+### 3. Provision GCP infrastructure
 
 ```bash
 export GCP_PROJECT_ID=your-project-id
@@ -76,57 +117,61 @@ export GCP_REGION=us-central1
 bash infra/setup.sh
 ```
 
-This enables APIs, creates the Artifact Registry repo, service account, IAM bindings, and Secret Manager placeholder secrets.
+This enables all required APIs, creates the Artifact Registry repo, service account, IAM bindings, and Secret Manager placeholder secrets.
 
-### 2b. Populate Secret Manager secrets
+Also add `GCP_PROJECT_ID` and `GCP_REGION` to your `.env` file.
 
-`infra/setup.sh` creates placeholder secrets. You must replace them with real values **before deploying**. Run each command below, substituting your actual credentials:
+---
+
+### 4. Populate Secret Manager
+
+`infra/setup.sh` creates secrets with placeholder values. Replace them with your real credentials now:
 
 ```bash
-# Your Asana Personal Access Token
-# → Asana profile → My Settings → Apps → Manage Developer Apps → Personal access token
+# Asana PAT (from Step 2a)
 echo -n "your-asana-pat" | gcloud secrets versions add asana-pat --data-file=-
 
-# Your Asana MCP OAuth client credentials (from Step 4 / asana/setup_guide.md Step 0)
-echo -n "your-mcp-client-id" | gcloud secrets versions add asana-mcp-client-id --data-file=-
+# Asana MCP OAuth credentials (from Step 2c)
+echo -n "your-mcp-client-id"     | gcloud secrets versions add asana-mcp-client-id --data-file=-
 echo -n "your-mcp-client-secret" | gcloud secrets versions add asana-mcp-client-secret --data-file=-
+```
+
+Verify a secret was stored correctly:
+
+```bash
+gcloud secrets versions access latest --secret=asana-pat
 ```
 
 > **`asana-webhook-secret`** is written automatically during the webhook handshake (`webhook_register.py`) — do not set it manually.
 >
 > **`asana-mcp-access-token`, `asana-mcp-refresh-token`, `asana-mcp-token-expiry`** are written automatically by `asana/mcp_auth_setup.py` — do not set them manually.
 
-Verify any secret was stored correctly:
+---
+
+### 5. Seed BigQuery
 
 ```bash
-gcloud secrets versions access latest --secret=asana-pat
-```
-
-### 3. Seed BigQuery data
-
-Create a virtual environment first — this avoids macOS system Python namespace package conflicts that affect the `google.*` libraries:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
 pip install google-cloud-bigquery asana google-cloud-secret-manager httpx python-dotenv
 python3 bigquery/seed_data.py
 ```
 
-Creates the `pmo_intelligence` dataset with 150 historical projects, 40 resource allocation records, and 12 company OKRs.
+Creates the `pmo_intelligence` dataset with 150 historical projects, 40 resource allocation records, and 12 company OKRs. **If you already have workloads running in BigQuery and want this tool to use that instead, this step is not needed, this is for test/demo porpuse only**
 
-> **Keep the venv active** for all subsequent local script steps (`mcp_auth_setup.py`, `webhook_register.py`). To reactivate in a new terminal: `source .venv/bin/activate`
+---
 
-### 4. Configure Asana
+### 6. Authorize the Asana MCP server
 
-Follow the step-by-step guide in [`asana/setup_guide.md`](asana/setup_guide.md):
-- Create the "New Project Requests" project with custom fields
-- Create the MCP OAuth app with two required settings before running the auth script:
-  - **OAuth:** add `http://localhost:8888/callback` to the redirect URL allowlist
-  - **Manage Distribution:** add your workspace (or set to "Any workspace") — without this the token exchange fails with *"This app is not available to your Asana workspace or organization"*
-- Run `python3 asana/mcp_auth_setup.py` to authorize the Asana MCP server
+This one-time OAuth flow stores the MCP access token in Secret Manager so the Asana Context agent can connect at runtime:
 
-### 5. Deploy to Cloud Run
+```bash
+python3 asana/mcp_auth_setup.py
+```
+
+A browser window opens for you to authorize the app. After approval it writes the token to Secret Manager automatically.
+
+---
+
+### 7. Deploy to Cloud Run
 
 ```bash
 bash deploy.sh
@@ -134,15 +179,19 @@ bash deploy.sh
 
 Deploys all 5 services in the correct order, captures service URLs, and injects them as environment variables.
 
-### 6. Register the Asana webhook
+---
+
+### 8. Register the Asana webhook
 
 ```bash
 python3 asana/webhook_register.py
 ```
 
-Registers the webhook against the "New Project Requests" project using the Asana Python SDK. The SDK call blocks synchronously while Asana completes the handshake with the webhook receiver (up to ~30 seconds), then returns the webhook GID on success.
+Registers the webhook against the "New Project Requests" project. The script blocks while Asana completes the handshake with the webhook receiver (up to ~30 seconds), then prints the webhook GID on success.
 
-### 7. Test the pipeline
+---
+
+### 9. Test the pipeline
 
 Submit the Asana intake form with:
 - **Project Type:** Infrastructure
