@@ -2,7 +2,7 @@
 
 > **A2A + MCP (Google & Asana) + Vertex AI + BigQuery + Asana**
 >
-> Live demo for [Google Cloud Next](https://cloud.withgoogle.com/next) — Recording Studio
+> Live demo for [Google Cloud Next](https://cloud.withgoogle.com/next)
 
 **Author:** Kevin Blanco | Senior Developer Advocate, Asana | Google Developer Expert (Cloud & AI/ML)
 
