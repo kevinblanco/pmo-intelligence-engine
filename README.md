@@ -23,7 +23,7 @@ When a PMO analyst submits a project request through an Asana intake form, a mul
 
 The PMO reviewer opens the task and has everything they need to make a data-driven decision — no spreadsheets, no BigQuery queries, no Slack threads.
 
-![PMO Intelligence Engine Architecture](pmo_intelligence_engine.png)
+![PMO Intelligence Engine Architecture](diagrams/pmo_intelligence_engine.png)
 
 ---
 
