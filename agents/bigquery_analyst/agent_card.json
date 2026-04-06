@@ -1,0 +1,15 @@
+{
+  "name": "BigQuery PMO Analyst",
+  "description": "Queries historical project data in BigQuery to find similar past projects and their outcomes. Provides budget overrun rates, timeline patterns, and outcome distributions.",
+  "version": "1.0.0",
+  "url": "${BQ_ANALYST_URL}",
+  "skills": [
+    {
+      "id": "historical_analysis",
+      "name": "Historical Project Analysis",
+      "description": "Finds similar past projects and analyzes budget, timeline, and outcome patterns"
+    }
+  ],
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["application/json"]
+}

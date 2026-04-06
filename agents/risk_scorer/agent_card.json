@@ -1,0 +1,15 @@
+{
+  "name": "PMO Risk Scorer",
+  "description": "Analyzes historical project data to calculate a risk score (1-10), identify risk factors, assess strategic fit, and recommend Approve / Flag for Review / Escalate.",
+  "version": "1.0.0",
+  "url": "${RISK_SCORER_URL}",
+  "skills": [
+    {
+      "id": "risk_scoring",
+      "name": "Project Risk Scoring",
+      "description": "Calculates risk score 1-10 and produces a recommendation based on historical patterns"
+    }
+  ],
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["application/json"]
+}

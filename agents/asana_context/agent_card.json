@@ -1,0 +1,15 @@
+{
+  "name": "Asana PMO Context Advisor",
+  "description": "Queries the live Asana Work Graph to find active similar projects, team task load, and potential duplicate work. Uses the Asana MCP server.",
+  "version": "1.0.0",
+  "url": "${ASANA_CONTEXT_URL}",
+  "skills": [
+    {
+      "id": "live_workspace_context",
+      "name": "Live Workspace Context",
+      "description": "Finds active similar projects and team workload from the live Asana workspace"
+    }
+  ],
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["application/json"]
+}

@@ -1,0 +1,30 @@
+# Environment
+.env
+.env.local
+
+# GCP credentials
+*-key.json
+service-account*.json
+
+# Python
+__pycache__/
+.venv/
+venv/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Generated diagrams (root level)
+/*.png
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+demo/

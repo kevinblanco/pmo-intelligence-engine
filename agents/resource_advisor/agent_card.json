@@ -1,0 +1,15 @@
+{
+  "name": "PMO Resource Advisor",
+  "description": "Queries BigQuery to determine team resource availability and OKR alignment for the current quarter. Returns resource signal (Available/Limited/Constrained) and strategic fit.",
+  "version": "1.0.0",
+  "url": "${RESOURCE_ADVISOR_URL}",
+  "skills": [
+    {
+      "id": "resource_availability",
+      "name": "Resource Availability Check",
+      "description": "Checks team capacity and OKR alignment for the current quarter"
+    }
+  ],
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["application/json"]
+}
